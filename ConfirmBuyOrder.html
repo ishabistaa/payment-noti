@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Buy Confirmation Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-container {
+            width: 50%;
+            margin: 30px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        textarea {
+            height: 100px;
+        }
+
+        button {
+            background-color: #d6d129;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #d3c548;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Pet Buy Confirmation</h2>
+        <form id="buyConfirmationForm">
+            <!-- Read-only fields -->
+            <div class="form-group">
+                <label for="petName">Pet Name:</label>
+                <input type="text" id="petName" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="petBreed">Breed:</label>
+                <input type="text" id="petBreed" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="petAge">Age:</label>
+                <input type="text" id="petAge" readonly>
+            </div>
+
+            <!-- User input fields -->
+            <div class="form-group">
+                <label for="buyerName">Full Name:</label>
+                <input type="text" id="buyerName" placeholder="Enter your full name" required>
+                <div id="errorBuyerName" class="error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="buyerEmail">Email Address:</label>
+                <input type="email" id="buyerEmail" placeholder="Enter your email" required>
+                <div id="errorBuyerEmail" class="error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="buyerPhone">Phone Number:</label>
+                <input type="tel" id="buyerPhone" placeholder="Enter your phone number" required>
+                <div id="errorBuyerPhone" class="error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="reason">Why Do You Want to Adopt This Pet?</label>
+                <textarea id="reason" placeholder="Enter your reason for buying the pet" required></textarea>
+                <div id="errorReason" class="error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="buyAgreement">
+                    <input type="checkbox" id="buyAgreement" required>
+                    I agree to provide proper care, food, medical attention, and shelter for the pet.
+                </label>
+            </div>
+
+            <button type="submit">Submit buy Confirmation</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4l9MAjo0nwg8svNH2nCe1amzsRnu11Lk",
+            authDomain: "adopet-9b45a.firebaseapp.com",
+            databaseURL: "https://adopet-9b45a-default-rtdb.firebaseio.com",
+            projectId: "adopet-9b45a",
+            storageBucket: "adopet-9b45a.appspot.com",
+            messagingSenderId: "528567839616",
+            appId: "1:528567839616:web:def598f1423ef83ab6f65"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Auto-fill pet details from localStorage
+        window.onload = () => {
+            const petData = JSON.parse(localStorage.getItem("selectedPet"));
+            if (petData) {
+                document.getElementById("petName").value = petData.petName;
+                document.getElementById("petBreed").value = petData.breed;
+                document.getElementById("petAge").value = petData.age + " years";
+            }
+        };
+
+        // Handle form submission
+        document.getElementById("buyConfirmationForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            // Check if user is logged in
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be logged in to submit the buy confirmation. Redirecting to login page...");
+                window.location.href = "login.html"; // Replace with your login page
+                return;
+            }
+
+            const formData = {
+                petName: document.getElementById("petName").value,
+                petBreed: document.getElementById("petBreed").value,
+                petAge: document.getElementById("petAge").value,
+                buyerName: document.getElementById("buyerName").value,
+                buyerEmail: document.getElementById("buyerEmail").value,
+                buyerPhone: document.getElementById("buyerPhone").value,
+                reason: document.getElementById("reason").value,
+            };
+
+            // Add form data to Firebase under "confirmselling"
+            const confirmsellingRef = ref(database, "confirmselling");
+            const newSaleRef = push(confirmsellingRef);
+
+            set(newSaleRef, {
+                petName: formData.petName,
+                petBreed: formData.petBreed,
+                petAge: formData.petAge,
+                buyerName: formData.buyerName,
+                buyerEmail: formData.buyerEmail,
+                buyerPhone: formData.buyerPhone,
+                reason: formData.reason,
+                userId: user.uid,
+                userEmail: user.email,
+            })
+                .then(() => {
+                    alert("Your buy confirmation has been submitted!");
+                    window.location.href = "./index.html";
+                    document.getElementById("buyConfirmationForm").reset();
+                    localStorage.removeItem("selectedPet");
+                    window.location.href = "../project/index.html";
+                })
+                .catch((error) => {
+                    console.error("Error submitting buy confirmation:", error);
+                    alert("Failed to submit the form. Please try again.");
+                });
+        });
+
+        // Monitor authentication state and enable/disable submission
+        onAuthStateChanged(auth, (user) => {
+            const submitButton = document.querySelector("button[type='submit']");
+            if (user) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit buy Confirmation";
+            } else {
+                submitButton.disabled = true;
+                submitButton.textContent = "Log in to Submit";
+            }
+        });
+    </script>
+</body>
+</html>

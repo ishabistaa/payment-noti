@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Buy Confirmation List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 30px auto;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            margin-right: 10px;
+        }
+
+        .btn-delete {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .btn-accept {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Pet Buy Confirmation List</h2>
+        <table id="confirmationTable">
+            <thead>
+                <tr>
+                    <th>Pet Name</th>
+                    <th>Breed</th>
+                    <th>Age</th>
+                    <th>Buyer Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, get, remove, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4l9MAjo0nwg8svNH2nCe1amzsRnu11Lk",
+            authDomain: "adopet-9b45a.firebaseapp.com",
+            databaseURL: "https://adopet-9b45a-default-rtdb.firebaseio.com",
+            projectId: "adopet-9b45a",
+            storageBucket: "adopet-9b45a.appspot.com",
+            messagingSenderId: "528567839616",
+            appId: "1:528567839616:web:def598f1423ef83ab6f65"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        // Fetch confirmation data
+        window.onload = () => {
+            const confirmationRef = ref(database, "confirmselling");
+            get(confirmationRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const confirmations = snapshot.val();
+                    const tableBody = document.getElementById("confirmationTable").getElementsByTagName('tbody')[0];
+
+                    Object.keys(confirmations).forEach(key => {
+                        const confirmation = confirmations[key];
+                        const row = tableBody.insertRow();
+
+                        row.innerHTML = `
+                            <td>${confirmation.petName}</td>
+                            <td>${confirmation.petBreed}</td>
+                            <td>${confirmation.petAge}</td>
+                            <td>${confirmation.buyerName}</td>
+                            <td>${confirmation.buyerEmail}</td>
+                            <td>${confirmation.buyerPhone}</td>
+                            <td>${confirmation.reason}</td>
+                            <td>${confirmation.status || "Pending"}</td>
+                            <td>
+                                <button class="btn btn-accept" onclick="acceptConfirmation('${key}')">Accept</button>
+                                 <a href="../sellpets.html">
+               
+              </a>
+                                <button class="btn btn-delete" onclick="deleteConfirmation('${key}')">Delete</button>
+                            </td>
+                        `;
+                    });
+                } else {
+                    alert("No data found.");
+                }
+            }).catch((error) => {
+                console.error("Error fetching data:", error);
+            });
+        };
+
+        // Accept confirmation
+        function acceptConfirmation(key) {
+            const confirmationRef = ref(database, `confirmselling/${key}`);
+            update(confirmationRef, {
+                status: "Accepted"
+            }).then(() => {
+                alert("Buy confirmation accepted!");
+                window.location.reload();
+            }).catch((error) => {
+                console.error("Error accepting confirmation:", error);
+                alert("Failed to accept confirmation. Please try again.");
+            });
+        }
+
+        // Delete confirmation
+        function deleteConfirmation(key) {
+            const confirmationRef = ref(database, `confirmselling/${key}`);
+            remove(confirmationRef).then(() => {
+                alert("Buy confirmation deleted!");
+                window.location.reload();
+            }).catch((error) => {
+                console.error("Error deleting confirmation:", error);
+                alert("Failed to delete confirmation. Please try again.");
+            });
+        }
+    </script>
+</body>
+</html>
