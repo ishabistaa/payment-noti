@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pets for Sale</title>
+  <link rel="stylesheet" href="sellpets.css">
+</head>
+<body>
+  <h1>Pets Available for Sale</h1>
+  
+  <!-- Search Bar -->
+  <div id="search-bar-container" style="text-align: center; margin-bottom: 20px;">
+    <input 
+      type="text" 
+      id="search-bar" 
+      placeholder="Search Pets by name, breed, or other details..." 
+      style="padding: 10px; width: 300px; border-radius: 5px; border: 1px solid #ddd;" 
+    />
+    <button id="search-button" style="padding: 10px; margin-left: 10px; border-radius: 5px; border: 1px solid #ddd; cursor: pointer;">
+      Search
+    </button>
+  </div>
+
+  <!-- Pet List -->
+  <section id="sell" class="pet-section">
+    <div class="pet-grid" id="sellGrid"></div>
+  </section>
+
+  <!-- Modal for Pet Details -->
+  <div id="petModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <div id="petDetails" class="modal-details"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPVUYFGvtRBrq59GaAYkj5_U2O-hSpUPc",
+      authDomain: "adoptpet-a601b.firebaseapp.com",
+      databaseURL: "https://adoptpet-a601b-default-rtdb.firebaseio.com",
+      projectId: "adoptpet-a601b",
+      storageBucket: "adoptpet-a601b.appspot.com",
+      messagingSenderId: "96785941976",
+      appId: "1:96785941976:web:b33e3c8ebd4a9a17669ead",
+      measurementId: "G-TQE9G5KL5S"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const petRef = ref(database, "petsForSale");
+  
+    const sellGrid = document.getElementById("sellGrid");
+    const modal = document.getElementById("petModal");
+    const modalDetails = document.getElementById("petDetails");
+    const closeModal = document.querySelector(".close");
+    const searchButton = document.getElementById("search-button");
+    const searchBar = document.getElementById("search-bar");
+    
+    let pets = [];
+  
+    // Fetch pets from Firebase
+    onValue(petRef, (snapshot) => {
+      const data = snapshot.val();
+      pets = data ? Object.values(data) : [];
+      displayPets(pets);
+    });
+  
+    // Function to display pets
+    function displayPets(petList) {
+      sellGrid.innerHTML = "";
+      petList.forEach(pet => {
+        const petCard = document.createElement("div");
+        petCard.className = "pet-card";
+        
+        // Adding the status box above the image
+        const statusBox = pet.status ? `<div class="status-box" style="background-color: orange; color: white; padding: 5px; text-align: center;">${pet.status}</div>` : "";
+  
+        petCard.innerHTML = `
+          ${statusBox}
+          <img src="${pet.photo || 'placeholder.jpg'}" alt="${pet.petName || 'Unknown'}" class="pet-image">
+          <h2>${pet.petName || 'Unknown'} (${pet.sex || 'N/A'})</h2>
+          <p><strong>Breed:</strong> ${pet.breed || 'N/A'}</p>
+          <p><strong>Age:</strong> ${pet.age || 'N/A'} years</p>
+          <p><strong>Price:</strong> Rs ${pet.price || 'N/A'}</p>
+        `;
+  
+        petCard.addEventListener("click", () => {
+          modalDetails.innerHTML = `
+            <img src="${pet.photo || 'placeholder.jpg'}" alt="${pet.petName || 'Unknown'}" class="modal-image">
+            <h2>${pet.petName || 'Unknown'}</h2>
+            <p><strong>Breed:</strong> ${pet.breed || 'N/A'}</p>
+            <p><strong>Age:</strong> ${pet.age || 'N/A'} years</p>
+            <p><strong>Weight:</strong> ${pet.weight || 'N/A'} kg</p>
+            <p><strong>Price:</strong> Rs ${pet.price || 'N/A'}</p>
+            <p><strong>Contact:</strong> ${pet.contact || 'N/A'}</p>
+            <div class="button-group">
+              <a href="../chat.html">
+                <button class="btn primary chat-btn">Chat with Seller</button>
+              </a>
+              <a href="ConfirmBuyOrder.html">
+                <button class="btn primary get-pet-btn">Buy This Pet</button>
+              </a>
+            </div>
+          `;
+          modal.style.display = "block";
+        });
+  
+        sellGrid.appendChild(petCard);
+      });
+    }
+  
+    // Close modal
+    closeModal.addEventListener("click", () => modal.style.display = "none");
+    window.addEventListener("click", (e) => {
+      if (e.target === modal) modal.style.display = "none";
+    });
+  
+    // Search functionality
+    searchButton.addEventListener("click", () => {
+      const query = searchBar.value.toLowerCase();
+      if (!query) {
+        displayPets(pets);
+      } else {
+        const filteredPets = pets.filter(pet => 
+          pet.petName?.toLowerCase().includes(query) ||
+          pet.breed?.toLowerCase().includes(query) ||
+          pet.sex?.toLowerCase().includes(query)||
+          pet.age?.toString().includes(query)
+        );
+        displayPets(filteredPets);
+      }
+    });
+  </script>
+  
+</body>
+</html>
