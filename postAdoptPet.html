@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post a Pet</title>
+  <link rel="stylesheet" href="postAdoptPet.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Post a Pet for Adoption</h1>
+    <form id="petForm">
+      <div class="form-group">
+        <label for="petPhoto">Photo</label>
+        <input type="file" id="photo" name="photo" accept="image/*" required>
+      </div>
+      <div class="form-group">
+        <label for="petName">Pet Name</label>
+        <input type="text" id="name" name="petName" placeholder="Enter pet's name" required>
+      </div>
+      <div class="form-group">
+        <label for="breed">Breed</label>
+        <input type="text" id="breed" name="breed" placeholder="Enter pet's breed" required>
+      </div>
+      <div class="form-group">
+        <label for="age">Age (in years)</label>
+        <input type="number" id="age" name="age" min="0" step="0.1" placeholder="Enter pet's age" required>
+      </div>
+      <div class="form-group">
+        <label for="sex">Sex</label>
+        <select id="sex" name="sex" required>
+          <option value="" disabled selected>Select pet's sex</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="weight">Weight (in kg)</label>
+        <input type="number" id="weight" name="weight" min="0" step="0.1" placeholder="Enter pet's weight" required>
+      </div>
+      <div class="form-group">
+        <label for="vaccinationDate">Last Vaccination Date</label>
+        <input type="date" id="lastVaccinationDate" name="vaccinationDate" required>
+      </div>
+      <div class="form-group">
+        <label for="totalVaccinations">Total Vaccinations Done</label>
+        <input type="number" id="vaccinations" name="totalVaccinations" min="0" placeholder="Enter total vaccinations">
+      </div>
+      <div class="form-group">
+        <label for="vetDocuments">Vet or Vaccination Documents</label>
+        <input type="file" id="vetDocs" name="vetDocuments" multiple>
+      </div>
+      <div class="form-group">
+        <label for="description">Additional Description</label>
+        <textarea id="description" name="description" rows="5" placeholder="Enter additional details about the pet"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location" placeholder="Enter your location">
+      </div>
+      <div class="form-group">
+        <label for="contact">Contact Information</label>
+        <input type="text" id="contact" name="contact" placeholder="Enter your phone/email" required>
+        <div id="contactError" class="error"></div>
+      </div>
+      <div class="form-group">
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          <option value="adoption">Adoption</option>
+          <option value="sale">Sale</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <button type="submit">Post Pet</button>
+      </div>
+    </form>
+  </div>
+  <script type="module" src="postAdopt.js"></script>
+</body>
+</html>

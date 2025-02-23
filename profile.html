@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 5px;
+      border: none;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button.delete {
+      background-color: #DC3545;
+    }
+    button.accept {
+      background-color: #28A745;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <h1>User Profile</h1>
+  <p>Welcome, <span id="userEmail">Loading...</span>!</p>
+  <button id="logoutBtn">Logout</button>
+
+
+  <h2>Posts for Adoption</h2>
+  <!-- "Go to" button below the heading -->
+  <button onclick="window.location.href='onlypostadopt.html'">Go to</button>
+
+  <h2>Posts for Sell</h2>
+  <button onclick="window.location.href='onysell.html'">Go to</button>
+
+  <h2>confirmed sell posts</h2>
+  <button onclick="window.location.href='confirmsell.html'">Go to</button>
+
+  <h2>Confirmed Pet Posts</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Pet Name</th>
+        <th>Breed</th>
+        <th>Age</th>
+        <th>Description</th>
+        <th>Buyer Name</th>
+        <th>Buyer Email</th>
+        <th>Buyer Phone</th>
+        <th>Adopter Address</th>
+        <th>Adoption Date</th>
+        <th>Pet Experience</th>
+        <th>status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="confirmedPostsData">
+      <!-- Confirmed posts will appear here -->
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4l9MAjo0nwg8svNH2nCe1amzsRnu11Lk",
+      authDomain: "adopet-9b45a.firebaseapp.com",
+      databaseURL: "https://adopet-9b45a-default-rtdb.firebaseio.com",
+      projectId: "adopet-9b45a",
+      storageBucket: "adopet-9b45a.appspot.com",
+      messagingSenderId: "528567839616",
+      appId: "1:528567839616:web:def598f1423ef83ab6f65",
+      measurementId: "G-GK1YF97X41",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const auth = getAuth(app);
+
+    const adoptionPostsData = document.getElementById('adoptionPostsData');
+    const salePostsData = document.getElementById('salePostsData');
+    const userEmailElement = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const confirmedPostsData = document.getElementById('confirmedPostsData');
+
+    const loadConfirmedPosts = () => {
+      const confirmAdoptRef = ref(database, "confirmadopt");
+
+      onValue(confirmAdoptRef, (snapshot) => {
+        confirmedPostsData.innerHTML = ""; // Clear previous data
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const key = childSnapshot.key;
+
+          const row = document.createElement('tr');
+          row.setAttribute("data-key", key);
+          row.innerHTML = `
+            <td>${data.petName}</td>
+            <td>${data.petBreed}</td>
+            <td>${data.petAge}</td>
+            <td>${data.petDescription}</td>
+            <td>${data.buyerName}</td>
+            <td>${data.buyerEmail}</td>
+            <td>${data.buyerPhone}</td>
+            <td>${data.adopterAddress}</td>
+            <td>${data.adoptionDate}</td>
+            <td>${data.petExperience}</td>
+            <td>${data.status}</td>
+            <td>
+              <button class="accept" onclick="acceptAdoption('${key}', '${data.petName}')">Accept</button>
+              
+              <button class="delete-btn">Delete</button>
+            </td>
+          `;
+          
+          
+                 // Function to handle the accept button click
+  function acceptAdoption(adoptionId, petName) {
+    const status = "Accepted"; // Set status to "Accepted"
+
+    // Send POST request to update the adoption status
+    fetch("http://localhost:3000/update-adoption-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        adoptionId: adoptionId,
+        status: status
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert(data.message); // Show success message
+      // You can update the button to show "Accepted" and disable it
+      const row = document.querySelector(`tr[data-key='${adoptionId}']`);
+      row.querySelector('.accept').disabled = true;
+      row.querySelector('.accept').innerText = "Accepted";
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      alert("There was an error accepting the adoption.");
+    });
+  }
+
+          // Add event listener to delete button
+          const deleteBtn = row.querySelector('.delete-btn');
+          deleteBtn.addEventListener('click', () => {
+            // Remove from Firebase
+            const postRef = ref(database, `confirmadopt/${key}`);
+            remove(postRef)
+              .then(() => {
+                console.log("Post deleted from Firebase");
+                // Remove row from HTML table
+                row.remove();
+              })
+              .catch((error) => {
+                console.error("Error deleting post from Firebase:", error);
+              });
+          });
+
+          confirmedPostsData.appendChild(row);
+        });
+      });
+    };
+
+    window.acceptAdoption = (key, petName) => {
+      if (confirm(`Are you sure you want to accept the adoption for ${petName}?`)) {
+        const confirmAdoptRef = ref(database, `confirmadopt/${key}`);
+        update(confirmAdoptRef, { status: "Adopted" })
+          .then(() => {
+            alert("Adoption accepted successfully. Status updated to 'Adopted'.");
+            window.location.href = "../adoptedPets.html"; // Redirect to adoptedPets.html
+          })
+          .catch((error) => {
+            console.error("Error updating adoption status:", error);
+          });
+      }
+    };
+
+    // Fetch confirmed posts when the user is logged in
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userEmailElement.textContent = user.email;
+        loadUserPosts(user.email);
+        loadConfirmedPosts(user.email); // Load confirmed posts
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    const loadUserPosts = (userEmail) => {
+      const adoptionRef = ref(database, "adoption");
+      onValue(adoptionRef, (snapshot) => {
+        adoptionPostsData.innerHTML = "";
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const key = childSnapshot.key;
+          if (data.posterEmail === userEmail) {
+            const row = document.createElement('tr');
+            row.setAttribute("data-key", key);
+            row.innerHTML = `
+              <td>${data.petName}</td>
+              <td>${data.petBreed}</td>
+              <td>${data.petAge}</td>
+              <td>${data.petDescription}</td>
+              <td>${data.location}</td>
+              <td>
+                <button class="edit" onclick="editAdoptionPost('${key}')">Edit</button>
+                <button class="delete" onclick="deleteAdoptionPost('${key}')">Delete</button>
+              </td>
+            `;
+            adoptionPostsData.appendChild(row);
+          }
+        });
+      });
+
+      const petForSaleRef = ref(database, "petsForSale");
+      onValue(petForSaleRef, (snapshot) => {
+        salePostsData.innerHTML = "";
+        snapshot.forEach((childSnapshot) => {
+          const data = childSnapshot.val();
+          const key = childSnapshot.key;
+          if (data.posterEmail === userEmail) {
+            const row = document.createElement('tr');
+            row.setAttribute("data-key", key);
+            row.innerHTML = `
+              <td>${data.petName}</td>
+              <td>${data.petBreed}</td>
+              <td>${data.petAge}</td>
+              <td>${data.petSex}</td>
+              <td>Rs. ${data.price}</td>
+              <td>${data.contact}</td>
+              <td>
+                <button class="edit" onclick="editSalePost('${key}')">Edit</button>
+                <button class="delete" onclick="deleteSalePost('${key}')">Delete</button>
+              </td>
+            `;
+            salePostsData.appendChild(row);
+          }
+        });
+      });
+    }
+    
+
+    window.editAdoptionPost = (key) => {
+      const row = document.querySelector(`[data-key="${key}"]`);
+      const cells = row.querySelectorAll("td");
+      const currentValues = Array.from(cells).map(cell => cell.textContent);
+
+      cells[0].innerHTML = `<input type="text" value="${currentValues[0]}" />`;
+      cells[1].innerHTML = `<input type="text" value="${currentValues[1]}" />`;
+      cells[2].innerHTML = `<input type="text" value="${currentValues[2]}" />`;
+      cells[3].innerHTML = `<input type="text" value="${currentValues[3]}" />`;
+      cells[4].innerHTML = `<input type="text" value="${currentValues[4]}" />`;
+
+      cells[5].innerHTML = `
+        <button class="save" onclick="saveAdoptionPost('${key}')">Save</button>
+        <button class="cancel" onclick="cancelEditAdoptionPost('${key}', ${JSON.stringify(currentValues)})">Cancel</button>
+      `;
+    };
+
+    window.saveAdoptionPost = (key) => {
+      const row = document.querySelector(`[data-key="${key}"]`);
+      const inputs = row.querySelectorAll("input");
+      const updatedData = {
+        petName: inputs[0].value,
+        petBreed: inputs[1].value,
+        petAge: inputs[2].value,
+        petDescription: inputs[3].value,
+        location: inputs[4].value,
+      };
+
+      update(ref(database, `adoption/${key}`), updatedData)
+        .then(() => {
+          alert("Adoption post updated successfully.");
+          row.innerHTML = `
+            <td>${updatedData.petName}</td>
+            <td>${updatedData.petBreed}</td>
+            <td>${updatedData.petAge}</td>
+            <td>${updatedData.petDescription}</td>
+            <td>${updatedData.location}</td>
+            <td>
+              <button class="edit" onclick="editAdoptionPost('${key}')">Edit</button>
+              <button class="delete" onclick="deleteAdoptionPost('${key}')">Delete</button>
+            </td>
+          `;
+        })
+        .catch(error => alert("Error updating post: " + error.message));
+    };
+
+    window.cancelEditAdoptionPost = (key, originalValues) => {
+      const row = document.querySelector(`[data-key="${key}"]`);
+      row.innerHTML = `
+        <td>${originalValues[0]}</td>
+        <td>${originalValues[1]}</td>
+        <td>${originalValues[2]}</td>
+        <td>${originalValues[3]}</td>
+        <td>${originalValues[4]}</td>
+        <td>
+          <button class="edit" onclick="editAdoptionPost('${key}')">Edit</button>
+          <button class="delete" onclick="deleteAdoptionPost('${key}')">Delete</button>
+        </td>
+      `;
+    };
+    window.editSalePost = (key) => {
+  const row = document.querySelector(`[data-key="${key}"]`);
+  const cells = row.querySelectorAll("td");
+  const currentValues = Array.from(cells).map(cell => cell.textContent);
+
+  cells[0].innerHTML = `<input type="text" value="${currentValues[0]}" />`;
+  cells[1].innerHTML = `<input type="text" value="${currentValues[1]}" />`;
+  cells[2].innerHTML = `<input type="text" value="${currentValues[2]}" />`;
+  cells[3].innerHTML = `<input type="text" value="${currentValues[3]}" />`;
+  cells[4].innerHTML = `<input type="text" value="${currentValues[4]}" />`;
+  cells[5].innerHTML = `<input type="text" value="${currentValues[5]}" />`;
+
+  cells[6].innerHTML = `
+    <button class="save" onclick="saveSalePost('${key}')">Save</button>
+    <button class="cancel" onclick="cancelEditSalePost('${key}', ${JSON.stringify(currentValues)})">Cancel</button>
+  `;
+};
+
+window.saveSalePost = (key) => {
+  const row = document.querySelector(`[data-key="${key}"]`);
+  const inputs = row.querySelectorAll("input");
+  const updatedData = {
+    petName: inputs[0].value,
+    petBreed: inputs[1].value,
+    petAge: inputs[2].value,
+    petSex: inputs[3].value,
+    price: inputs[4].value,
+    contact: inputs[5].value,
+  };
+
+  update(ref(database, `petsForSale/${key}`), updatedData)
+    .then(() => {
+      alert("Sale post updated successfully.");
+      row.innerHTML = `
+        <td>${updatedData.petName}</td>
+        <td>${updatedData.petBreed}</td>
+        <td>${updatedData.petAge}</td>
+        <td>${updatedData.petSex}</td>
+        <td>Rs. ${updatedData.price}</td>
+        <td>${updatedData.contact}</td>
+        <td>
+          <button class="edit" onclick="editSalePost('${key}')">Edit</button>
+          <button class="delete" onclick="deleteSalePost('${key}')">Delete</button>
+        </td>
+      `;
+    })
+    .catch(error => alert("Error updating post: " + error.message));
+};
+
+window.cancelEditSalePost = (key, originalValues) => {
+  const row = document.querySelector(`[data-key="${key}"]`);
+  row.innerHTML = `
+    <td>${originalValues[0]}</td>
+    <td>${originalValues[1]}</td>
+    <td>${originalValues[2]}</td>
+    <td>${originalValues[3]}</td>
+    <td>${originalValues[4]}</td>
+    <td>${originalValues[5]}</td>
+    <td>
+      <button class="edit" onclick="editSalePost('${key}')">Edit</button>
+      <button class="delete" onclick="deleteSalePost('${key}')">Delete</button>
+    </td>
+  `;
+};
+
+
+    window.deleteAdoptionPost = (key) => {
+      if (confirm("Are you sure you want to delete this post?")) {
+        remove(ref(database, `adoption/${key}`))
+          .then(() => {
+            alert("Adoption post deleted successfully.");
+            document.querySelector(`[data-key="${key}"]`).remove();
+          })
+          .catch(error => alert("Error deleting post: " + error.message));
+      }
+    };
+
+    window.deleteSalePost = (key) => {
+      if (confirm("Are you sure you want to delete this sale post?")) {
+        remove(ref(database, `petsForSale/${key}`))
+          .then(() => {
+            alert("Sale post deleted successfully.");
+            document.querySelector(`[data-key="${key}"]`).remove();
+          })
+          .catch(error => alert("Error deleting sale post: " + error.message));
+      }
+    };
+    const sendEmailToBuyer = (buyerEmail, petName) => {
+  fetch('http://localhost:3000/send-email', { // Your backend URL
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      to: buyerEmail,
+      subject: 'Pet Adoption Confirmation Deleted',
+      message: `We regret to inform you that the adoption confirmation for the pet "${petName}" has been deleted.`
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Email sent successfully:', data);
+  })
+  .catch((error) => {
+    console.error('Error sending email:', error);
+  });
+};
+
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth)
+        .then(() => {
+          alert("Logged out successfully.");
+          window.location.href = "../project/index.html";
+        })
+        .catch(error => alert("Error logging out: " + error.message));
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userEmailElement.textContent = user.email;
+        loadUserPosts(user.email);
+      } else {
+        window.location.href = "../project/index.html";
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
